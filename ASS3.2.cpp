@@ -3,7 +3,6 @@
 #include <vector>
 using namespace std;
 
-// Convert IP address string into 4 integers
 vector<int> parseIP(string ip) {
     vector<int> parts;
     string temp;
@@ -16,7 +15,6 @@ vector<int> parseIP(string ip) {
     return parts;
 }
 
-// Print a 32-bit number as an IP address
 void printIP(unsigned int ip) {
     cout << ((ip >> 24) & 255) << "."
          << ((ip >> 16) & 255) << "."
@@ -25,7 +23,6 @@ void printIP(unsigned int ip) {
 }
 
 int main() {
-
     string ip;
     int requiredSubnets;
 
@@ -35,15 +32,7 @@ int main() {
     cout << "Enter number of required subnets: ";
     cin >> requiredSubnets;
 
-    // -------------------------------
-    // Step 1: Parse IP
-    // -------------------------------
-
     vector<int> addr = parseIP(ip);
-
-    // -------------------------------
-    // Step 2: Find IP Class
-    // -------------------------------
 
     char ipClass;
     int defaultBits;
@@ -67,10 +56,6 @@ int main() {
 
     cout << "\nIP Class: " << ipClass << endl;
 
-    // -------------------------------
-    // Step 3: Calculate borrowed bits
-    // -------------------------------
-
     int borrowedBits = 0;
     int possibleSubnets = 1;
 
@@ -82,10 +67,6 @@ int main() {
     cout << "Borrowed bits: " << borrowedBits << endl;
     cout << "Actual number of subnets: "
          << possibleSubnets << endl;
-
-    // -------------------------------
-    // Step 4: Calculate host bits
-    // -------------------------------
 
     int totalNetworkBits = defaultBits + borrowedBits;
     int hostBits = 32 - totalNetworkBits;
@@ -101,10 +82,6 @@ int main() {
     cout << "Usable IP addresses per subnet: "
          << addressesPerSubnet - 2 << endl;
 
-    // -------------------------------
-    // Step 5: Create subnet mask
-    // -------------------------------
-
     unsigned int mask;
 
     if (totalNetworkBits == 32)
@@ -116,27 +93,17 @@ int main() {
     printIP(mask);
     cout << endl;
 
-    // -------------------------------
-    // Step 6: Convert IP to 32-bit
-    // -------------------------------
-
     unsigned int ipValue =
         ((unsigned int)addr[0] << 24) |
         ((unsigned int)addr[1] << 16) |
         ((unsigned int)addr[2] << 8) |
         (unsigned int)addr[3];
 
-    // Find first network address
     unsigned int network = ipValue & mask;
-
-    // -------------------------------
-    // Step 7: Print subnet details
-    // -------------------------------
 
     cout << "\n-----------------------------------------------\n";
 
     for (int i = 0; i < possibleSubnets; i++) {
-
         unsigned int subnetNetwork =
             network + (i * addressesPerSubnet);
 
