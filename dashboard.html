@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IntelliProxy dashboard</title>
+<style>
+:root{color-scheme:light;--bg:#f5f5f0;--panel:#fffffe;--ink:#111111;--mute:#555555;--line:#ddddd8;--soft:#eeeeea;--accent:#222222;
+--HIT:#2e7d32;--REVALIDATED:#388e3c;--STALE:#66bb6a;--MISS:#e65100;--EXPIRED:#bf360c;--UNCACHEABLE:#757575;--BYPASS:#9e9e9e;--BLOCKED:#c62828;--TUNNEL:#455a64;--ERROR:#b71c1c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;align-items:center;justify-content:space-between;padding:.9rem 1.25rem;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:1.25rem;margin:0;letter-spacing:-.01em}h2{font-size:1rem;margin:0 0 .6rem}
+.sub{color:var(--mute);font-size:.85rem}
+main{max-width:1180px;margin:0 auto;padding:1rem 1.25rem 3rem}
+.bar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+button,input,select{font:inherit;color:inherit}
+button{border:1px solid var(--line);background:var(--panel);padding:.35rem .8rem;border-radius:6px;cursor:pointer}
+button:hover{background:var(--soft)}button.primary{background:#222;border-color:#222;color:#fff}
+button.danger{color:var(--BLOCKED)}button:disabled{opacity:.45;cursor:not-allowed}
+button.sm{padding:.1rem .5rem;font-size:.82rem}
+input,select{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:.35rem .6rem}
+input[type=text]{min-width:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;background:var(--HIT);margin-right:.4rem}.dot.off{background:var(--BLOCKED)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin-bottom:1rem}
+.hero{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:1.25rem;align-items:center}
+.big{font-size:3.4rem;font-weight:700;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stack{display:flex;height:2.1rem;border-radius:6px;overflow:hidden;background:var(--soft)}
+.stack i{display:block;height:100%;min-width:2px}
+.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;margin-top:.6rem;font-size:.85rem}
+.sw{display:inline-block;width:.7rem;height:.7rem;border-radius:2px;margin-right:.3rem;background:var(--c)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1rem}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.7rem .9rem}
+.tile b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums;line-height:1.2}.tile span{color:var(--mute);font-size:.82rem}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1rem}
+nav{display:flex;gap:.25rem;border-bottom:1px solid var(--line);margin:0 0 1rem;overflow-x:auto}
+nav button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:.6rem .9rem;color:var(--mute);white-space:nowrap}
+nav button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:.4rem .6rem;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:600;color:var(--mute);position:sticky;top:0;background:var(--panel)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+td.url{white-space:normal;word-break:break-all;min-width:14rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.82rem}
+td.url small{color:var(--mute)}td.det{white-space:normal;min-width:11rem}
+.pill{display:inline-block;padding:.05rem .5rem;border-radius:99px;font-size:.78rem;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.empty{color:var(--mute);padding:1.2rem .6rem}
+.muted{color:var(--mute)}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem}
+.res{background:var(--soft);border-radius:8px;padding:.7rem .9rem;margin-top:.8rem;font-size:.88rem}
+.res pre{margin:.5rem 0 0;white-space:pre-wrap;word-break:break-word;max-height:9rem;overflow:auto;font-size:.82rem}
+.chips{display:flex;gap:.4rem;flex-wrap:wrap;margin:.5rem 0}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}.row input[type=text]{flex:1 1 16rem}
+#toast{position:fixed;right:1rem;bottom:1rem;background:var(--ink);color:var(--bg);padding:.55rem .9rem;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:80vw}
+#toast.on{opacity:1}
+svg text{fill:var(--mute);font-size:10px}
+ul.recs{margin:.2rem 0 0;padding-left:1.2rem}
+@media (max-width:640px){.hero{grid-template-columns:1fr}.big{font-size:2.8rem}.hide-s{display:none}main{padding:.75rem}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>IntelliProxy</h1><div class="sub" id="listen">connecting…</div></div>
+  <div class="bar"><span id="live" class="sub"><i class="dot off"></i>connecting…</span>
+    <button id="pause">Pause</button><button id="reset" class="danger" title="Zero all counters and the request log; the cache is kept">Reset statistics</button></div>
+</header>
+<main>
+<div class="card hero">
+  <div><div class="big" id="ratio">–</div><div class="sub">cache hit ratio</div></div>
+  <div><h2>Where every request went</h2><div class="stack" id="stack"></div><div class="legend" id="legend"></div></div>
+</div>
+<div class="sub" style="margin:-.4rem 0 1rem">Hit ratio = answered from cache ÷ cacheable GET requests (HIT + REVALIDATED + STALE over everything cacheable). HTTPS is tunnelled end-to-end and never cached.</div>
+<div class="tiles" id="tiles"></div>
+
+<nav role="tablist" id="tabs">
+  <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+  <button role="tab" data-tab="requests" aria-selected="false">Request log</button>
+  <button role="tab" data-tab="cache" aria-selected="false">Cache</button>
+  <button role="tab" data-tab="blocklist" aria-selected="false">Blocklist</button>
+  <button role="tab" data-tab="analysis" aria-selected="false">Analysis</button>
+</nav>
+
+<section data-pane="overview">
+  <div class="cols">
+    <div class="card"><h2>Latency</h2><div class="scroll"><table id="lat"></table></div>
+      <div class="sub" style="margin-top:.5rem" id="timesaved"></div></div>
+    <div class="card"><h2>Try a request through the proxy</h2>
+      <form id="tform" class="row"><input type="text" id="turl" value="http://127.0.0.1:9000/hello" aria-label="URL to fetch" spellcheck="false">
+        <button class="primary" type="submit">Fetch</button></form>
+      <div class="chips" id="presets"></div>
+      <label class="sub"><input type="checkbox" id="tnc"> bypass cache (sends Cache-Control: no-cache)</label>
+      <div class="res" id="tres">Fetch a URL; the result shows whether the proxy answered from its cache.</div></div>
+  </div>
+  <div class="cols">
+    <div class="card"><h2>Latency of the last requests <span class="sub" id="latnote"></span></h2><div id="latchart"></div></div>
+    <div class="card"><h2>Running hit ratio <span class="sub">(cacheable requests in the log)</span></h2><div id="ratechart"></div></div>
+  </div>
+</section>
+
+<section data-pane="requests" hidden>
+  <div class="card">
+    <div class="row" style="margin-bottom:.6rem"><select id="fout" aria-label="Filter by outcome"><option value="">All outcomes</option></select>
+      <input type="text" id="fq" placeholder="Filter by URL or client" aria-label="Filter requests"><span class="sub" id="rcount"></span></div>
+    <div class="scroll"><table><thead><tr><th>Time</th><th>Method</th><th>URL</th><th class="n">Status</th><th>Outcome</th><th class="n">Size</th><th class="n">Latency</th><th class="hide-s">Thread</th><th class="hide-s">Detail</th></tr></thead><tbody id="rrows"></tbody></table></div>
+  </div>
+</section>
+
+<section data-pane="cache" hidden>
+  <div class="card">
+    <div class="row" style="margin-bottom:.6rem;justify-content:space-between"><div id="csum" class="sub"></div>
+      <div class="row"><button id="pexp">Remove expired</button><button id="pall" class="danger">Clear cache</button></div></div>
+    <div class="scroll"><table><thead><tr><th>URL</th><th class="n">Status</th><th class="hide-s">Type</th><th class="n">Size</th><th class="n">Hits</th><th>State</th><th class="n">Time left</th><th class="hide-s">TTL from</th><th></th></tr></thead><tbody id="crows"></tbody></table></div>
+  </div>
+</section>
+
+<section data-pane="blocklist" hidden>
+  <div class="card"><h2>Blocked-domain rules</h2>
+    <form id="bform" class="row"><input type="text" id="brule" placeholder="ads.example.com   *.tracker.net   re:^ad\d+\.net$   !allowed.example.com" aria-label="New rule" spellcheck="false">
+      <button class="primary" type="submit">Add rule</button><button type="button" id="breload">Reload file</button></form>
+    <div class="sub" style="margin:.4rem 0 .8rem">A plain domain blocks it and every subdomain. Rules apply immediately and are saved to <span class="mono" id="bfile">blocklist.txt</span>. A rule starting with ! always allows.</div>
+    <form id="cform" class="row" style="margin-bottom:.8rem"><input type="text" id="chost" placeholder="Check a hostname, e.g. www.doubleclick.net" aria-label="Hostname to check" spellcheck="false"><button type="submit">Check</button><span id="cres" class="sub"></span></form>
+    <div class="scroll"><table><thead><tr><th>Action</th><th>Rule</th><th>Kind</th><th>Source</th><th class="n">Requests blocked</th><th></th></tr></thead><tbody id="brows"></tbody></table></div>
+  </div>
+</section>
+
+<section data-pane="analysis" hidden>
+  <div class="cols">
+    <div class="card"><h2>Recommendations</h2><ul class="recs" id="recs"></ul>
+      <div class="sub" style="margin-top:.6rem">Evictions: <span id="evict"></span> · <a href="/__proxy/analysis?format=text" target="_blank" rel="noopener">plain-text report</a></div></div>
+    <div class="card"><h2>Why requests went to the origin</h2><div class="scroll"><table id="why"></table></div></div>
+  </div>
+  <div class="card"><h2>Domains</h2><div class="scroll"><table id="doms"></table></div></div>
+  <div class="cols">
+    <div class="card"><h2>Most reused cached URLs</h2><div class="scroll"><table id="topurl"></table></div></div>
+    <div class="card"><h2>Most refetched URLs</h2><div class="scroll"><table id="refetch"></table></div></div>
+  </div>
+  <div class="card"><h2>Hit ratio per minute</h2><div class="scroll"><table id="tl"></table></div></div>
+</section>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtB=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(2)+' MB';
+const fmtMs=n=>n>=1000?(n/1000).toFixed(2)+' s':(n<10?n.toFixed(1):Math.round(n))+' ms';
+const pct=x=>x==null?'–':(x*100).toFixed(x>0&&x<.1?1:0)+'%';
+const OUT=['HIT','REVALIDATED','STALE','MISS','EXPIRED','UNCACHEABLE','BYPASS','BLOCKED','TUNNEL','ERROR'];
+const CACHEABLE=['HIT','MISS','EXPIRED','REVALIDATED','STALE','UNCACHEABLE'],SERVED=['HIT','REVALIDATED','STALE'];
+const pill=(o,label)=>`<span class="pill" style="--c:var(--${OUT.includes(o)?o:'BYPASS'})">${esc(label||o)}</span>`;
+const PRESETS=['/hello','/time','/ttl/3','/etag','/expires?s=3','/nostore','/slow?ms=800','/page.html'];
+let D=null,paused=false,tab='overview',timer=null;
+
+async function api(path,body){
+  const opt=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)};
+  const r=await fetch(path,opt),j=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(j.error||r.status+' '+r.statusText);return j;
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2600)}
+async function act(fn,msg){try{const r=await fn();if(msg)toast(typeof msg==='function'?msg(r):msg);await poll(true)}catch(e){toast('Error: '+e.message)}}
+
+async function poll(force){
+  if(paused&&!force)return;
+  try{D=await api('/__proxy/live?limit=200');$('#live').innerHTML='<i class="dot"></i>live · '+new Date().toLocaleTimeString();render()}
+  catch(e){$('#live').innerHTML='<i class="dot off"></i>proxy not reachable';}
+}
+
+function render(){
+  const a=D.analysis,s=a.summary,sv=D.server;
+  $('#listen').textContent=`listening on ${sv.listen} · cache ${sv.cache_mb} MB · default TTL ${sv.default_ttl}s · up ${s.uptime_s}s`;
+  $('#ratio').textContent=s.cacheable_requests?pct(s.hit_ratio):'–';
+  const tot=s.requests_total,o=s.outcomes;
+  $('#stack').innerHTML=OUT.filter(k=>o[k]).map(k=>`<i style="width:${o[k]/tot*100}%;background:var(--${k})" title="${k}: ${o[k]}"></i>`).join('');
+  $('#legend').innerHTML=tot?OUT.filter(k=>o[k]).map(k=>`<span><i class="sw" style="--c:var(--${k})"></i>${k} ${o[k]}</span>`).join(''):'<span class="muted">No requests yet. Point a client at the proxy, or use “Try a request” below.</span>';
+  const c=a.cache,L=s.latency;
+  const tiles=[[tot,'requests'],[s.hits,'hits (fresh, no origin contact)'],[s.misses,'misses (fetched from origin)'],[s.revalidated,'revalidated (304, body reused)'],
+   [s.uncacheable+s.bypass,'not cacheable / bypassed'],[s.blocked,'blocked by policy'],[s.tunnels,'HTTPS tunnels (not cached)'],
+   [`${c.entries}`,`cached objects · ${fmtB(c.bytes)} of ${fmtB(c.max_bytes)}`],[`${sv.active} / ${sv.peak}`,`connections now / peak (limit ${sv.max})`],[pct(s.byte_hit_ratio),'bytes served from cache']];
+  $('#tiles').innerHTML=tiles.map(t=>`<div class="tile"><b>${esc(t[0])}</b><span>${esc(t[1])}</span></div>`).join('');
+  $('#lat').innerHTML=`<tr><th>Served</th><th class="n">Requests</th><th class="n">Average</th><th class="n">Median</th><th class="n">95th pct</th></tr>`+
+    [['answered from cache',L.cache],['needed the origin',L.origin]].map(([n,x])=>`<tr><td>${n}</td><td class="n">${x.n}</td><td class="n">${x.n?fmtMs(x.avg):'–'}</td><td class="n">${x.n?fmtMs(x.p50):'–'}</td><td class="n">${x.n?fmtMs(x.p95):'–'}</td></tr>`).join('');
+  $('#timesaved').textContent=`Estimated origin time saved by the cache: ${fmtMs(s.time_saved_ms)} · request coalescing merged ${s.coalesced_requests} duplicate fetches (percentiles use the last ${L.cache.n+L.origin.n} requests)`;
+  const reqs=D.requests;
+  if(tab==='overview')charts(reqs);
+  if(tab==='requests')requests(reqs);
+  if(tab==='cache')cache();
+  if(tab==='blocklist')blocklist();
+  if(tab==='analysis')analysis();
+}
+
+function charts(reqs){
+  const rows=reqs.filter(r=>r.outcome!=='BLOCKED'&&r.outcome!=='TUNNEL').slice(-80);
+  const W=520,H=120;
+  if(!rows.length){$('#latchart').innerHTML='<div class="empty">No data yet.</div>';$('#ratechart').innerHTML='<div class="empty">No data yet.</div>';$('#latnote').textContent='';return}
+  const max=Math.max(...rows.map(r=>r.ms),1),bw=W/80;
+  $('#latnote').textContent=`(tallest bar = ${fmtMs(max)})`;
+  $('#latchart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Latency per request">`+
+    rows.map((r,i)=>{const h=Math.max(2,r.ms/max*(H-6));return `<rect x="${i*bw+1}" y="${H-h}" width="${bw-2}" height="${h}" fill="var(--${OUT.includes(r.outcome)?r.outcome:'BYPASS'})"><title>${esc(r.outcome)} ${fmtMs(r.ms)} ${esc(r.url)}</title></rect>`}).join('')+`</svg>`;
+  let n=0,sv=0;const pts=[];
+  for(const r of reqs){if(!CACHEABLE.includes(r.outcome))continue;n++;if(SERVED.includes(r.outcome))sv++;pts.push(sv/n)}
+  const step=pts.length>1?(W-40)/(pts.length-1):0;
+  const path=pts.map((p,i)=>`${i?'L':'M'}${(30+i*step).toFixed(1)},${(H-8-p*(H-20)).toFixed(1)}`).join('');
+  $('#ratechart').innerHTML=pts.length?`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Running hit ratio"><line x1="30" x2="${W-10}" y1="${H-8}" y2="${H-8}" stroke="var(--line)"/><line x1="30" x2="${W-10}" y1="12" y2="12" stroke="var(--line)" stroke-dasharray="3 3"/><text x="2" y="15">100%</text><text x="8" y="${H-5}">0%</text><path d="${path}" fill="none" stroke="var(--HIT)" stroke-width="2"/></svg>`:'<div class="empty">No cacheable requests yet.</div>';
+}
+
+function split(u){const m=u.match(/^https?:\/\/([^\/]+)(.*)$/);return m?`<small>${esc(m[1])}</small>${esc(m[2]||'/')}`:esc(u)}
+function requests(reqs){
+  const sel=$('#fout');
+  if(sel.options.length===1){OUT.forEach(k=>sel.add(new Option(k,k)))}
+  const q=$('#fq').value.toLowerCase(),f=sel.value;
+  const rows=reqs.filter(r=>(!f||r.outcome===f)&&(!q||(r.url+' '+r.client).toLowerCase().includes(q))).reverse();
+  $('#rcount').textContent=`${rows.length} of the latest ${reqs.length} requests shown`;
+  $('#rrows').innerHTML=rows.length?rows.map(r=>`<tr><td>${esc(r.time)}</td><td>${esc(r.method)}</td><td class="url" title="${esc(r.url)}">${split(r.url)}</td><td class="n">${r.status}</td><td>${pill(r.outcome)}</td><td class="n">${fmtB(r.bytes)}</td><td class="n">${r.outcome==='BLOCKED'?'–':fmtMs(r.ms)}</td><td class="hide-s">${esc(r.thread)}</td><td class="hide-s muted det">${esc(r.reason)}</td></tr>`).join(''):`<tr><td colspan="9" class="empty">No matching requests.</td></tr>`;
+}
+
+function cache(){
+  const c=D.analysis.cache,rows=D.cache_entries;
+  $('#csum').textContent=`${c.entries} objects · ${fmtB(c.bytes)} of ${fmtB(c.max_bytes)} · ${c.fresh} fresh · ${c.stale} expired · ${c.never_hit} never reused`;
+  $('#crows').innerHTML=rows.length?rows.map(e=>`<tr><td class="url" title="${esc(e.url)}">${split(e.url)}</td><td class="n">${e.status}</td><td class="hide-s">${esc(e.content_type||'–')}</td><td class="n">${fmtB(e.size)}</td><td class="n">${e.hits}</td><td>${pill(e.state==='fresh'?'HIT':'EXPIRED',e.state)}</td><td class="n">${e.ttl_remaining>0?Math.round(e.ttl_remaining)+' s':'expired'}</td><td class="hide-s muted">${esc(e.ttl_source)}${e.validators?' + validators':''}</td><td><button class="sm danger" data-url="${esc(e.url)}">Remove</button></td></tr>`).join(''):`<tr><td colspan="9" class="empty">The cache is empty. Cacheable GET responses appear here after the first request.</td></tr>`;
+}
+
+function blocklist(){
+  const b=D.blocklist;$('#bfile').textContent=b.file||'(in memory)';
+  $('#brows').innerHTML=b.rules.length?b.rules.map(r=>`<tr><td>${pill(r.type==='block'?'BLOCKED':'HIT',r.type)}</td><td class="mono">${esc(r.rule)}</td><td>${esc(r.kind)}</td><td>${r.source==='cli'?'command line':'file'}</td><td class="n">${r.blocked_requests}</td><td><button class="sm danger" data-rule="${esc(r.rule)}" ${r.source==='cli'?'disabled title="Defined with --block; restart to change"':''}>Remove</button></td></tr>`).join(''):`<tr><td colspan="6" class="empty">No rules yet: nothing is blocked. Add a domain above.</td></tr>`;
+}
+
+function table(el,head,rows,empty){$(el).innerHTML=rows.length?`<tr>${head.map(h=>`<th class="${h[1]||''}">${h[0]}</th>`).join('')}</tr>`+rows.map(r=>`<tr>${r.map((v,i)=>`<td class="${head[i][1]||''}">${v}</td>`).join('')}</tr>`).join(''):`<tr><td class="empty">${empty}</td></tr>`}
+function analysis(){
+  const a=D.analysis;
+  $('#recs').innerHTML=a.recommendations.map(r=>`<li>${esc(r)}</li>`).join('');
+  $('#evict').textContent=Object.keys(a.summary.evictions).length?Object.entries(a.summary.evictions).map(([k,v])=>k+' '+v).join(', '):'none';
+  table('#why',[['Reason'],['Requests','n']],a.miss_reasons.map(m=>[esc(m.reason),m.count]),'No origin fetches yet.');
+  table('#doms',[['Domain'],['Requests','n'],['Hit ratio','n'],['From cache','n'],['From origin','n'],['Time saved','n']],
+    a.top_domains.map(d=>[esc(d.domain),d.requests,pct(d.hit_ratio),fmtB(d.bytes_from_cache),fmtB(d.bytes_from_origin),fmtMs(d.time_saved_ms)]),'No traffic yet.');
+  table('#topurl',[['URL'],['Cache hits','n'],['Origin fetches','n']],a.top_cached_urls.map(u=>[`<span class="mono">${esc(u.url)}</span>`,u.cache_hits,u.origin_fetches]),'Nothing reused yet.');
+  table('#refetch',[['URL'],['Origin fetches','n'],['Cache hits','n']],a.most_refetched_urls.map(u=>[`<span class="mono">${esc(u.url)}</span>`,u.origin_fetches,u.cache_hits]),'Nothing fetched more than once.');
+  table('#tl',[['Minute'],['Cacheable requests','n'],['Hit ratio','n']],a.timeline.map(t=>[t.minute,t.lookups,pct(t.hit_ratio)]),'No cacheable requests yet.');
+}
+
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(!b)return;tab=b.dataset.tab;
+  document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==tab);if(D)render()});
+$('#pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume':'Pause';if(!paused)poll()};
+$('#reset').onclick=()=>confirm('Zero all statistics and the request log? Cached objects are kept.')&&act(()=>api('/__proxy/stats/reset',{}),'Statistics reset');
+$('#fout').onchange=$('#fq').oninput=()=>D&&requests(D.requests);
+$('#pexp').onclick=()=>act(()=>api('/__proxy/purge',{expired:1}),r=>`Removed ${r.purged} expired object(s)`);
+$('#pall').onclick=()=>confirm('Remove every cached object?')&&act(()=>api('/__proxy/purge',{all:1}),r=>`Cleared ${r.purged} object(s)`);
+$('#crows').onclick=e=>{const u=e.target.dataset.url;if(u)act(()=>api('/__proxy/purge',{url:u}),'Removed from cache')};
+$('#bform').onsubmit=e=>{e.preventDefault();const v=$('#brule').value.trim();if(!v)return;
+  act(async()=>{const r=await api('/__proxy/blocklist/add',{rule:v});$('#brule').value='';return r},r=>r.changed?`Rule added: ${r.rule}`:'That rule already exists')};
+$('#brows').onclick=e=>{const r=e.target.dataset.rule;if(r)act(()=>api('/__proxy/blocklist/remove',{rule:r}),'Rule removed')};
+$('#breload').onclick=()=>act(()=>api('/__proxy/reload',{}),r=>`Reloaded ${r.rules_loaded} rules from file`);
+$('#cform').onsubmit=async e=>{e.preventDefault();const h=$('#chost').value.trim();if(!h)return;
+  try{const r=await api('/__proxy/blocklist?check='+encodeURIComponent(h));$('#cres').textContent=r.check.blocked_by?`Blocked by rule: ${r.check.blocked_by}`:'Allowed: no rule matches'}catch(x){toast(x.message)}};
+$('#presets').innerHTML=PRESETS.map(p=>`<button type="button" class="sm" data-p="${esc(p)}">${esc(p)}</button>`).join('');
+$('#presets').onclick=e=>{const p=e.target.dataset.p;if(p){$('#turl').value='http://127.0.0.1:9000'+p;$('#tform').requestSubmit()}};
+$('#tform').onsubmit=async e=>{e.preventDefault();const box=$('#tres');box.textContent='Fetching…';
+  try{const r=await api('/__proxy/fetch',{url:$('#turl').value.trim(),no_cache:$('#tnc').checked}),h=r.headers;
+    box.innerHTML=`${pill(h['X-Cache']||(h['X-Blocked-By']?'BLOCKED':'BYPASS'))} <b>${r.status} ${esc(r.reason)}</b> · ${fmtMs(r.elapsed_ms)} · ${fmtB(r.bytes)}`+
+      (h.Age!==undefined?` · age ${esc(h.Age)}s`:'')+(h['X-Cache-TTL-Remaining']!==undefined?` · fresh for ${esc(h['X-Cache-TTL-Remaining'])}s more`:'')+
+      (h['X-Blocked-By']?` · blocked by <span class="mono">${esc(h['X-Blocked-By'])}</span>`:'')+`<pre>${esc(r.body_preview)}</pre>`;
+    poll(true)}catch(x){box.textContent='Error: '+x.message}};
+
+poll();timer=setInterval(poll,1500);
+</script>
+</body>
+</html>

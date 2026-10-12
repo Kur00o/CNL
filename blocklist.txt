@@ -1,0 +1,10 @@
+# IntelliProxy blocklist -- rules apply immediately. Edit this file by hand (hot-reloaded),
+# or use the dashboard's Blocklist tab / POST /__proxy/blocklist/add (saved back here).
+
+doubleclick.net            # blocks the domain and every subdomain
+*.adservice.example        # glob: subdomains only
+re:^track\d+\.example\.org$
+0.0.0.0 telemetry.example.com   # hosts-file syntax
+
+# allow-list override: wins over any block rule
+!static.doubleclick.net
