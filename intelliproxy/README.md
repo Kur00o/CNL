@@ -10,6 +10,12 @@ dashboard fed by the proxy's real counters.
 
 Requirements: Python 3.8+ (macOS: `python3 --version`). Optional: `openssl` (already on macOS) for the HTTPS demo.
 
+Video link: https://youtu.be/zRs3STMkLKw 
+
+Report link: https://docs.google.com/document/d/1jiGghdGhpNYu2W1tRIyJDXxs-8J9viApFD-JBry3q2k/edit?usp=sharing 
+
+PPT link: https://docs.google.com/presentation/d/1hFCtxpM8_1TWcUaoZQ0UjYzr-zVRTu_niPs9Zwjaymw/edit?usp=drivesdk 
+
 ---
 
 ## 1. Quick start (macOS + VS Code)
